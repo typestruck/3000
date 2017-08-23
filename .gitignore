@@ -7,3 +7,8 @@
 .#*.scm
 
 notes
+
+bender
+*.o
+
+*.import.*
