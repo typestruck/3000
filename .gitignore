@@ -1,14 +1,10 @@
 *.ss~
 *.ss#*
 .#*.ss
-
 *.scm~
 *.scm#*
 .#*.scm
-
 notes
-
 bender
 *.o
-
 *.import.*
