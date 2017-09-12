@@ -68,7 +68,7 @@
     (define rs sc:right-section)    
     (define c un:uni)        
 
-    ;;The database of words, grouped and grammatical class and then word size.    
+    ;;The database of words, grouped by grammatical class and then word size.    
     (define grammatical-classes 
         ((lambda ()            
             ;;so we can use random indexes later on     
