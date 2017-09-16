@@ -29,7 +29,7 @@
     
     ;;A "simple name" is a string containing <adjective> [, <adjective>] <noun>.
     (define (simple-name max-chars)                                    
-        (rg:irregex-replace ",([^,]*)$" (str:string-join (make-name '() (cat-symbol-should-happen '(adjectives adjectives nouns) '(100 40 100))max-chars) ", ") "" 1))
+        (rg:irregex-replace ",([^,]*)$" (str:string-join (make-name '() (cat-symbol-should-happen '(adjectives adjectives nouns) '(100 40 100)) max-chars) ", ") "" 1))
 
     ;;A "complex name" is a string containing [<adjective>] <noun> [who | that] [<adverb>] <verb> [<adjective>] [<noun>] [<other>].       
     (define (complex-name max-chars)
@@ -72,7 +72,8 @@
                     (if (or (eq? word #f) (> (string-length word) (- max-chars 1)))
                         (adjust (str:string-join (reverse text) " ") max-chars)                        
                         (describe (cons word text) (- max-chars (string-length word) 1) (string-append (second (str:string-tokenize prefix)) " " word)))))))                            
-
+    
+    ;;Balances brackets, adding a smiling face in case of an odd number of brackets.
     (define (adjust text remaining-chars)
         (let loop ((positions (unbalanced text))
                    (text text)          
@@ -83,7 +84,7 @@
                               (insert-smiley text single)
                               (insert-bracket text single count)))
                 ((p . ositions) (loop ositions (insert-bracket text p count) (+ count 1))))))                            
-
+                        
     (define (insert-smiley text position)                
         (if (char=? #\) (string-ref text position))
             (str:string-replace text " :" position position)            
