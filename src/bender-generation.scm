@@ -1,8 +1,7 @@
 (declare (unit bender-generation))
 
 (module bender-generation (generate source-text)
-    (import (except scheme string-length string-ref string-set! make-string string substring string->list list->string string-fill! write-char read-char display)
-            (except chicken reverse-list->string print print*))
+    (import (except scheme string-length string-ref string-set! make-string string substring string->list list->string string-fill! write-char read-char display) (except chicken reverse-list->string print print*))
     (require-extension matchable srfi-1 utf8)
     (require-library extras random-bsd srfi-69 section-combinators uni-combinators utf8-srfi-13 irregex utils stack)
     (import (prefix extras ext:) (prefix random-bsd rnd:) (prefix srfi-69 ht:) (prefix section-combinators sc:) (prefix uni-combinators un:) (prefix utf8-srfi-13 str:) (prefix irregex rg:) (prefix utils ut:) (prefix stack st:))
