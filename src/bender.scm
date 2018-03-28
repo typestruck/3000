@@ -9,10 +9,10 @@
     `(((/ "generate")
        (GET ,(lambda _
                 (let* ((params (uri-query (request-uri (current-request))))
-                       (type (string->symbol (string-downcase (alist-ref 'type params))))
-                       (chars (string->number (string-downcase (alist-ref 'chars params))))
-                       (response (cond ((eq? type 'description) (gen:generate 'description chars))
-                                       ((eq? type 'name) (gen:generate 'name chars)))))
+                       (what (string->symbol (string-downcase (alist-ref 'what params))))
+                       (max-chars (string->number (string-downcase (alist-ref 'max-chars params))))
+                       (response (cond ((eq? what 'description) (gen:generate 'description max-chars))
+                                       ((eq? what 'name) (gen:generate 'name max-chars)))))
                       (send-response status: 'ok body: (json->string response) headers: '((content-type #(text/json ((charset . "utf-8"))))))))))))         
 
 (define (main args)       
