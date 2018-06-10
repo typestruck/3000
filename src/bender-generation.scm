@@ -1,6 +1,6 @@
 (declare (unit bender-generation))
 
-(module bender-generation (generate source-text)
+(module bender-generation (generate)
     (import (except scheme string-length string-ref string-set! make-string string substring string->list list->string string-fill! write-char read-char display) (except chicken reverse-list->string print print*))
     (require-extension matchable srfi-1 utf8)
     (require-library extras random-bsd srfi-69 section-combinators uni-combinators utf8-srfi-13 irregex utils stack)
@@ -113,22 +113,24 @@
     (define c un:uni) 
 
     ;;The database of words, grouped by grammatical class and then word size.    
-    (define grammatical-classes 
-        ((lambda ()            
-            ;;hash-table doesnt have a persistent interface, the alternative persistent-hash-table has a bug when adding existing keys
-            (define (group-by-size words hash-table)
-                (match words
-                    ;;so we can use random indexes later on     
-                    (() (begin (ht:hash-table-walk hash-table (lambda (key value) (ht:hash-table-set! hash-table key (list->vector value))))
-                               hash-table))
-                    ((w . ords) (begin (ht:hash-table-update!/default hash-table (string-length w) (ls cons w) (list w))
-                                       (group-by-size ords hash-table))))) 
-            (ht:alist->hash-table (list (cons 'adjectives (group-by-size (ext:read-lines "data/adjectives") (ht:make-hash-table)))
-                                        (cons 'nouns (group-by-size (ext:read-lines "data/nouns") (ht:make-hash-table)))
-                                        (cons 'plural-nouns (group-by-size (ext:read-lines "data/plural-nouns") (ht:make-hash-table)))
-                                        (cons 'verbs (group-by-size (ext:read-lines "data/verbs") (ht:make-hash-table)))
-                                        (cons 'adverbs (group-by-size (ext:read-lines "data/adverbs") (ht:make-hash-table)))
-                                        (cons 'other (group-by-size (ext:read-lines "data/other") (ht:make-hash-table))))))))                     
+    (define grammatical-classes
+        (ht:alist->hash-table (list 
+                                    (cons 'adjectives (group-by-size (ext:read-lines "data/adjectives") (ht:make-hash-table)))
+                                    (cons 'nouns (group-by-size (ext:read-lines "data/nouns") (ht:make-hash-table)))
+                                    (cons 'plural-nouns (group-by-size (ext:read-lines "data/plural-nouns") (ht:make-hash-table)))
+                                    (cons 'verbs (group-by-size (ext:read-lines "data/verbs") (ht:make-hash-table)))
+                                    (cons 'adverbs (group-by-size (ext:read-lines "data/adverbs") (ht:make-hash-table)))
+                                    (cons 'other (group-by-size (ext:read-lines "data/other") (ht:make-hash-table))))))
+    
+    ;;hash-table doesnt have a persistent interface, the alternative persistent-hash-table has a bug when adding existing keys
+    (define (group-by-size words hash-table)
+        (match words
+            ;;so we can use random indexes later on     
+            (() (begin (ht:hash-table-walk hash-table (lambda (key value) (ht:hash-table-set! hash-table key (list->vector value)))
+                        hash-table)))
+            ((w . ords) (begin (ht:hash-table-update!/default hash-table (string-length w) (ls cons w) (list w)
+                                (group-by-size ords hash-table)))))) 
+
     ;;The input text to build a markov chain.
     (define source-text             
         (let group-by-prefix ((words (str:string-tokenize (ut:read-all "data/sep-alice-grim")))                              
