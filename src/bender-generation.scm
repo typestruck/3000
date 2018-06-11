@@ -1,16 +1,16 @@
 (declare (unit bender-generation))
 
-(module bender-generation (generate)
+(module bender-generation (generate test-suite group-by-prefix source-text hash-table-keys-values str:string-tokenize)
     (import (except scheme string-length string-ref string-set! make-string string substring string->list list->string string-fill! write-char read-char display) (except chicken reverse-list->string print print*))
     (require-extension matchable srfi-1 utf8)
-    (require-library extras random-bsd srfi-69 section-combinators uni-combinators utf8-srfi-13 irregex utils stack)
-    (import (prefix extras ext:) (prefix random-bsd rnd:) (prefix srfi-69 ht:) (prefix section-combinators sc:) (prefix uni-combinators un:) (prefix utf8-srfi-13 str:) (prefix irregex rg:) (prefix utils ut:) (prefix stack st:))
+    (require-library data-structures test section-combinators uni-combinators extras random-bsd srfi-69 utf8-srfi-13 irregex utils stack)
+    (import (prefix extras ext:) (prefix data-structures ds:) (prefix random-bsd rnd:) (prefix srfi-69 ht:) (prefix utf8-srfi-13 str:) (prefix irregex rg:) (prefix test ts:) (prefix utils ut:) (prefix stack st:) (prefix section-combinators sc:) (prefix uni-combinators un:))
 
     ;;Entry point for text generation.                                
     (define (generate what max-chars)        
         (capitalize (cond ((eq? what 'name) (generate-name max-chars))
                           ((eq? what 'description) (generate-description max-chars))
-                          (else "I know nothing about that yet."))))
+                          (else (abort "I know nothing about that yet.")))))
 
     ;;Names are generated according to the following patterns:
     ;;<adjective> [, <adjective>] <noun>       
@@ -33,7 +33,6 @@
     ;;A "complex name" is a string containing [<adjective>] <noun> [who | that] [<adverb>] <verb> [<adjective>] [<noun>] [<other>].       
     (define (complex-name max-chars)
         (str:string-join (make-name '() (cat-symbol-should-happen (list 'adjectives 'nouns (if (should-happen 70) "who" "that") 'adverbs 'verbs 'adjectives 'plural-nouns 'other) '(20 100 100 20 100 10 30 5)) max-chars) " "))    
-
     ;;Given a list, returns values according to their chance of occuring.
     (define (cat-symbol-should-happen values percentages)      
         (filter (c not (rs eq? #f)) (map (lambda (v p) (if (should-happen p) v #f)) values percentages)))            
@@ -48,7 +47,7 @@
     ;;If key-word is a string, returns it verbatim; otherwise looks up a word in grammatical-classes key-word who fits into max-chars.
     (define (next-word key-word max-chars)                
         (if (string? key-word)
-            ;;- 1 so we can add spaces later
+            ;; - 1 so we can add spaces later
             (if (< (- max-chars 1) (string-length key-word))
                 #f
                 key-word)
@@ -82,8 +81,7 @@
                 ((single) (if (and (odd? count) (> remaining-chars 1))
                               (insert-smiley text single)
                               (insert-bracket text single count)))
-                ((p . ositions) (loop ositions (insert-bracket text p count) (+ count 1))))))                            
-                        
+                ((p . ositions) (loop ositions (insert-bracket text p count) (+ count 1))))))                          
     (define (insert-smiley text position)                
         (if (char=? #\) (string-ref text position))
             (str:string-replace text " :" position position)            
@@ -106,38 +104,56 @@
                         (if (or (st:stack-empty? stack) (char=? #\) (string-ref text (st:stack-peek stack))))
                             (st:stack-push! stack i)
                             (st:stack-pop! stack)))))))
-
-    ;;Point free helpers.
+    ;; Point-free helpers.
     (define rs sc:right-section)
     (define ls sc:left-section)    
-    (define c un:uni) 
+    (define c un:uni)
 
-    ;;The database of words, grouped by grammatical class and then word size.    
-    (define grammatical-classes
-        (ht:alist->hash-table (list 
-                                    (cons 'adjectives (group-by-size (ext:read-lines "data/adjectives") (ht:make-hash-table)))
-                                    (cons 'nouns (group-by-size (ext:read-lines "data/nouns") (ht:make-hash-table)))
-                                    (cons 'plural-nouns (group-by-size (ext:read-lines "data/plural-nouns") (ht:make-hash-table)))
-                                    (cons 'verbs (group-by-size (ext:read-lines "data/verbs") (ht:make-hash-table)))
-                                    (cons 'adverbs (group-by-size (ext:read-lines "data/adverbs") (ht:make-hash-table)))
-                                    (cons 'other (group-by-size (ext:read-lines "data/other") (ht:make-hash-table))))))
+    ;;hash-table-update!/default has the bizarre behavior of calling the update function with the default value if the key is missing
+    (define (sane-hash-table-update!/default hash-table key updater default)
+        (if (ht:hash-table-exists? hash-table key)
+            (ht:hash-table-set! hash-table key (updater (ht:hash-table-ref hash-table key)))
+            (ht:hash-table-set! hash-table key default)))
     
     ;;hash-table doesnt have a persistent interface, the alternative persistent-hash-table has a bug when adding existing keys
     (define (group-by-size words hash-table)
         (match words
             ;;so we can use random indexes later on     
-            (() (begin (ht:hash-table-walk hash-table (lambda (key value) (ht:hash-table-set! hash-table key (list->vector value)))
-                        hash-table)))
-            ((w . ords) (begin (ht:hash-table-update!/default hash-table (string-length w) (ls cons w) (list w)
-                                (group-by-size ords hash-table)))))) 
+            (() (begin (ht:hash-table-walk hash-table (lambda (key value) (ht:hash-table-set! hash-table key (list->vector value))))
+                       hash-table))
+            ((w . ords) (begin (sane-hash-table-update!/default hash-table (string-length w) (ls cons w) (list w))
+                               (group-by-size ords hash-table))))) 
+    
+    ;;The database of words, grouped by grammatical class and then word size.    
+    (define grammatical-classes
+        (ht:alist->hash-table (list (cons 'adjectives (group-by-size (ext:read-lines "data/adjectives") (ht:make-hash-table)))
+                                    (cons 'nouns (group-by-size (ext:read-lines "data/nouns") (ht:make-hash-table)))
+                                    (cons 'plural-nouns (group-by-size (ext:read-lines "data/plural-nouns") (ht:make-hash-table)))
+                                    (cons 'verbs (group-by-size (ext:read-lines "data/verbs") (ht:make-hash-table)))
+                                    (cons 'adverbs (group-by-size (ext:read-lines "data/adverbs") (ht:make-hash-table)))
+                                    (cons 'other (group-by-size (ext:read-lines "data/other") (ht:make-hash-table))))))
+                                    
+    ;; Groups a string by triplets.    
+    (define (group-by-prefix words hash-table)
+        (define (update key-1 key-2 value)            
+            (begin (sane-hash-table-update!/default hash-table (string-append key-1 " " key-2) (ls cons value) (list value))
+                   hash-table))
+        (match words                
+            ((w o . rds) (if (not (null? rds)) (group-by-prefix (cons o rds) (update w o (car rds))) (update w o "")))
+            (_ hash-table)))
 
-    ;;The input text to build a markov chain.
-    (define source-text             
-        (let group-by-prefix ((words (str:string-tokenize (ut:read-all "data/sep-alice-grim")))                              
-                              (hash-table (ht:make-hash-table)))
-            (match words                
-                ((w o r . ds) (let ((key (string-append w " " o)))                                                                    
-                                (begin
-                                    (ht:hash-table-update!/default hash-table key (ls cons r) (list r))  
-                                    (group-by-prefix (cons o (cons r ds)) hash-table))))
-                (_ hash-table)))))                                
+    ;;The input text used to build a markov chain, as a hash table.
+    (define source-text
+        (group-by-prefix (str:string-tokenize (ut:read-all "data/sep-alice-grim")) (ht:make-hash-table)))        
+            
+    (define (hash-table-keys-values ht)
+        (cons (ds:sort (ht:hash-table-keys ht) str:string<) (list (ds:sort (ds:flatten (ht:hash-table-values ht)) str:string<))))
+
+    (define (test-suite)        
+        (let ((test-hash-table-3 (hash-table-keys-values (ht:alist->hash-table (list (cons "da bin" "ich") (cons "bin ich" "")))))
+              (test-hash-table-4 (hash-table-keys-values (ht:alist->hash-table (list (cons "da bin" "ich,") (cons "bin ich," "genau") (cons "ich, genau" ""))))))
+            (ts:test-group "group-by-prefix"
+                (ts:test "bad input" (hash-table-keys-values (ht:make-hash-table)) (hash-table-keys-values (group-by-prefix "da bin" (ht:make-hash-table))))
+                (ts:test "string 3 words" test-hash-table-3 (hash-table-keys-values (group-by-prefix (str:string-tokenize "da bin ich") (ht:make-hash-table))))
+                (ts:test "string 4 words" test-hash-table-4 (hash-table-keys-values (group-by-prefix (str:string-tokenize "da bin ich, genau") (ht:make-hash-table))))))))
+
