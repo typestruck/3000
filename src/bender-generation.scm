@@ -115,16 +115,17 @@
             (ht:hash-table-set! hash-table key (updater (ht:hash-table-ref hash-table key)))
             (ht:hash-table-set! hash-table key default)))
     
-    ;;hash-table doesnt have a persistent interface, the alternative persistent-hash-table has a bug when adding existing keys
+    ;; Groups the grammatical classes into word length, so it is easier to compose names later.
     (define (group-by-size words hash-table)
         (match words
             ;;so we can use random indexes later on     
             (() (begin (ht:hash-table-walk hash-table (lambda (key value) (ht:hash-table-set! hash-table key (list->vector value))))
                        hash-table))
+            ;;hash-table doesnt have a persistent interface, the alternative persistent-hash-table has a bug when adding existing keys           
             ((w . ords) (begin (sane-hash-table-update!/default hash-table (string-length w) (ls cons w) (list w))
                                (group-by-size ords hash-table))))) 
     
-    ;;The database of words, grouped by grammatical class and then word size.    
+    ;; The database of words, grouped by grammatical class and then word size.    
     (define grammatical-classes
         (ht:alist->hash-table (list (cons 'adjectives (group-by-size (ext:read-lines "data/adjectives") (ht:make-hash-table)))
                                     (cons 'nouns (group-by-size (ext:read-lines "data/nouns") (ht:make-hash-table)))
@@ -133,7 +134,7 @@
                                     (cons 'adverbs (group-by-size (ext:read-lines "data/adverbs") (ht:make-hash-table)))
                                     (cons 'other (group-by-size (ext:read-lines "data/other") (ht:make-hash-table))))))
                                     
-    ;; Groups a string by triplets.    
+    ;; Groups a string by triplets, e.g., "da bin ich, genau" => (("da bin", "ich,"), ("bin ich,", "genau" ), ("ich, genau", ""))
     (define (group-by-prefix words hash-table)
         (define (update key-1 key-2 value)            
             (begin (sane-hash-table-update!/default hash-table (string-append key-1 " " key-2) (ls cons value) (list value))
@@ -142,18 +143,22 @@
             ((w o . rds) (if (not (null? rds)) (group-by-prefix (cons o rds) (update w o (car rds))) (update w o "")))
             (_ hash-table)))
 
-    ;;The input text used to build a markov chain, as a hash table.
+    ;; The input text used to build a markov chain, as a hash table.
     (define source-text
         (group-by-prefix (str:string-tokenize (ut:read-all "data/sep-alice-grim")) (ht:make-hash-table)))        
             
+    ;; Helper to compare hash tables        
     (define (hash-table-keys-values ht)
         (cons (ds:sort (ht:hash-table-keys ht) str:string<) (list (ds:sort (ds:flatten (ht:hash-table-values ht)) str:string<))))
 
-    (define (test-suite)        
-        (let ((test-hash-table-3 (hash-table-keys-values (ht:alist->hash-table (list (cons "da bin" "ich") (cons "bin ich" "")))))
-              (test-hash-table-4 (hash-table-keys-values (ht:alist->hash-table (list (cons "da bin" "ich,") (cons "bin ich," "genau") (cons "ich, genau" ""))))))
-            (ts:test-group "group-by-prefix"
+    (define (test-suite)                
+        (ts:test-group "group-by-prefix"
+            (let ((test-hash-table-3 (hash-table-keys-values (ht:alist->hash-table (list (cons "da bin" "ich") (cons "bin ich" "")))))
+                  (test-hash-table-4 (hash-table-keys-values (ht:alist->hash-table (list (cons "da bin" "ich,") (cons "bin ich," "genau") (cons "ich, genau" ""))))))
                 (ts:test "bad input" (hash-table-keys-values (ht:make-hash-table)) (hash-table-keys-values (group-by-prefix "da bin" (ht:make-hash-table))))
                 (ts:test "string 3 words" test-hash-table-3 (hash-table-keys-values (group-by-prefix (str:string-tokenize "da bin ich") (ht:make-hash-table))))
-                (ts:test "string 4 words" test-hash-table-4 (hash-table-keys-values (group-by-prefix (str:string-tokenize "da bin ich, genau") (ht:make-hash-table))))))))
+                (ts:test "string 4 words" test-hash-table-4 (hash-table-keys-values (group-by-prefix (str:string-tokenize "da bin ich, genau") (ht:make-hash-table))))))
+        (ts:test-group "group-by-size"
+            (let ((test-hash-table (hash-table-keys-values (ht:alist->hash-table (list (cons 2 (list "da")) (cons 3 (list "bin", "ich")))))))                
+                (ts:test "2 and 3 words" test-hash-table (hash-table-keys-values (group-by-size (str:string-tokenize "da bin ich") (ht:make-hash-table))))))))        
 
