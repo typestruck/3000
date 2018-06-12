@@ -1,6 +1,6 @@
 (declare (unit bender-generation))
 
-(module bender-generation (generate test-suite group-by-prefix source-text hash-table-keys-values str:string-tokenize)
+(module bender-generation (generate test-suite unbalanced)
     (import (except scheme string-length string-ref string-set! make-string string substring string->list list->string string-fill! write-char read-char display) (except chicken reverse-list->string print print*))
     (require-extension matchable srfi-1 utf8)
     (require-library data-structures test section-combinators uni-combinators extras random-bsd srfi-69 utf8-srfi-13 irregex utils stack)
@@ -92,7 +92,8 @@
             (str:string-replace text "(" position (+ position 1))
             (str:string-replace text ")" position (+ position 1))))                
 
-    ;;stack doesnt have a persistent interface either :(
+    ;; Returns the indexes of an string wherein brackets are ummatched.
+    ;; stack doesnt have a persistent interface either :(        
     (define (unbalanced text)
         (do ((stack (st:make-stack))
              (i 0 (+ i 1)))
@@ -147,9 +148,12 @@
     (define source-text
         (group-by-prefix (str:string-tokenize (ut:read-all "data/sep-alice-grim")) (ht:make-hash-table)))        
             
-    ;; Helper to compare hash tables        
+    ;; Helper to compare hash tables.
     (define (hash-table-keys-values ht)
-        (cons (ds:sort (ht:hash-table-keys ht) str:string<) (list (ds:sort (ds:flatten (ht:hash-table-values ht)) str:string<))))
+        (define (->string obj) (if (number? obj) (number->string obj) obj))
+        (define (->list obj) (if (vector? obj) (vector->list obj) obj))
+        (cons (ds:sort (map ->string (ht:hash-table-keys ht)) str:string<) 
+              (list (ds:sort (ds:flatten (map ->list (ht:hash-table-values ht))) str:string<))))
 
     (define (test-suite)                
         (ts:test-group "group-by-prefix"
@@ -159,6 +163,11 @@
                 (ts:test "string 3 words" test-hash-table-3 (hash-table-keys-values (group-by-prefix (str:string-tokenize "da bin ich") (ht:make-hash-table))))
                 (ts:test "string 4 words" test-hash-table-4 (hash-table-keys-values (group-by-prefix (str:string-tokenize "da bin ich, genau") (ht:make-hash-table))))))
         (ts:test-group "group-by-size"
-            (let ((test-hash-table (hash-table-keys-values (ht:alist->hash-table (list (cons 2 (list "da")) (cons 3 (list "bin", "ich")))))))                
-                (ts:test "2 and 3 words" test-hash-table (hash-table-keys-values (group-by-size (str:string-tokenize "da bin ich") (ht:make-hash-table))))))))        
+            (let ((test-hash-table (hash-table-keys-values (ht:alist->hash-table (list (cons 2 (list "da")) (cons 3 (list "bin" "ich")))))))                
+                (ts:test "2 and 3 words" test-hash-table (hash-table-keys-values (group-by-size (str:string-tokenize "da bin ich") (ht:make-hash-table))))))        
+        (ts:test-group "adjust"
+            (ts:test "unbalanced- empty string" '() (unbalanced ""))
+            (ts:test "unbalanced- (" '(0) (unbalanced "("))
+            (ts:test "unbalanced- ())" '(2) (unbalanced "())"))
+            (ts:test "unbalanced- (((((" '(0 1 2 3 4) (unbalanced "(((((")))))
 
