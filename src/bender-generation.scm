@@ -1,11 +1,12 @@
 (declare (unit bender-generation))
 
-(module bender-generation (generate test-suite unbalanced)
+(module bender-generation (generate test-suite adjust unbalanced)
     (import (except scheme string-length string-ref string-set! make-string string substring string->list list->string string-fill! write-char read-char display) (except chicken reverse-list->string print print*))
     (require-extension matchable srfi-1 utf8)
     (require-library data-structures test section-combinators uni-combinators extras random-bsd srfi-69 utf8-srfi-13 irregex utils stack)
     (import (prefix extras ext:) (prefix data-structures ds:) (prefix random-bsd rnd:) (prefix srfi-69 ht:) (prefix utf8-srfi-13 str:) (prefix irregex rg:) (prefix test ts:) (prefix utils ut:) (prefix stack st:) (prefix section-combinators sc:) (prefix uni-combinators un:))
 
+    ;;TODO: improve handling of brackets and punctuation in general
     ;;Entry point for text generation.                                
     (define (generate what max-chars)        
         (capitalize (cond ((eq? what 'name) (generate-name max-chars))
@@ -169,5 +170,6 @@
             (ts:test "unbalanced- empty string" '() (unbalanced ""))
             (ts:test "unbalanced- (" '(0) (unbalanced "("))
             (ts:test "unbalanced- ())" '(2) (unbalanced "())"))
-            (ts:test "unbalanced- (((((" '(0 1 2 3 4) (unbalanced "(((((")))))
+            (ts:test "unbalanced- (((((" '(0 1 2 3 4) (unbalanced "((((("))
+            (ts:test "adjust- (" "()" (adjust "(" 2)))))
 
