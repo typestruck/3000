@@ -17,8 +17,8 @@
     (if (find (right-section string= "--test") args)
         (gen:test-suite)
         ((vhost-map `((".*" . ,(uri-match/spiffy my-custom-routes))))
-         (parameterize ((server-port 1337)                                  
-                        (default-response-headers '((content-type #(text/json ((charset . "utf-8"))) (accept-charset utf-8))))))     
+         (server-port 1337)                                  
+         (default-response-headers '((content-type #(text/json ((charset . "utf-8"))) (accept-charset utf-8))))     
          (start-server))))
 
 (cond-expand
