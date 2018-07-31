@@ -147,7 +147,7 @@
 
     ;; The input text used to build a markov chain, as a hash table.
     (define source-text
-        (group-by-prefix (str:string-tokenize (ut:read-all "data/sep-alice-grim")) (ht:make-hash-table)))        
+        (group-by-prefix (str:string-tokenize (ut:read-all "data/source-text")) (ht:make-hash-table)))        
             
     ;; Helper to compare hash tables.
     (define (hash-table-keys-values ht)
