@@ -1,6 +1,6 @@
 # Bender
 
-Bender is a IM bot, text generation and summary tool, primarily intended to help my other projects.  
+Bender is a IM bot, text generation and summary service, primarily intended to help my other projects.  
 
 ## Getting started 
 

@@ -1,12 +1,12 @@
 (declare (unit bender-generation))
 
-(module bender-generation (generate test-suite adjust unbalanced)
+(module bender-generation (generate test-suite)
     (import (except scheme string-length string-ref string-set! make-string string substring string->list list->string string-fill! write-char read-char display) (except chicken reverse-list->string print print*))
     (require-extension matchable srfi-1 utf8)
     (require-library data-structures test section-combinators uni-combinators extras random-bsd srfi-69 utf8-srfi-13 irregex utils stack)
     (import (prefix extras ext:) (prefix data-structures ds:) (prefix random-bsd rnd:) (prefix srfi-69 ht:) (prefix utf8-srfi-13 str:) (prefix irregex rg:) (prefix test ts:) (prefix utils ut:) (prefix stack st:) (prefix section-combinators sc:) (prefix uni-combinators un:))
 
-    ;;TODO: improve handling of brackets and punctuation in general
+    ;;TODO: improve handling of punctuation in general
     ;;Entry point for text generation.                                
     (define (generate what max-chars)        
         (capitalize (cond ((eq? what 'name) (generate-name max-chars))
@@ -72,6 +72,8 @@
                         (adjust (str:string-join (reverse text) " ") max-chars)                        
                         (describe (cons word text) (- max-chars (string-length word) 1) (string-append (second (str:string-tokenize prefix)) " " word)))))))                            
     
+    ;;TODO: not allow the text to end in anything other than . ? ! ...
+    ;;TODO: if the text ends in a conjunction or article, add ellipsis or remove it
     ;;Balances brackets, adding a smiling face in case of an odd number of brackets.
     (define (adjust text remaining-chars)
         (let loop ((positions (unbalanced text))
@@ -79,14 +81,14 @@
                    (count 1))                                        
             (match positions        
                 (() text)
-                ((single) (if (and (odd? count) (> remaining-chars 1))
+                ((single) (if (and (odd? count) (> remaining-chars 0))
                               (insert-smiley text single)
                               (insert-bracket text single count)))
                 ((p . ositions) (loop ositions (insert-bracket text p count) (+ count 1))))))                          
     (define (insert-smiley text position)                
         (if (char=? #\) (string-ref text position))
-            (str:string-replace text " :" position position)            
-            (str:string-replace text ":( " position (+ position 1))))                    
+            (str:string-replace text ":" position position)            
+            (str:string-replace text ":(" position (+ position 1))))                    
 
     (define (insert-bracket text position count)                            
         (if (odd? count)
@@ -166,10 +168,17 @@
         (ts:test-group "group-by-size"
             (let ((test-hash-table (hash-table-keys-values (ht:alist->hash-table (list (cons 2 (list "da")) (cons 3 (list "bin" "ich")))))))                
                 (ts:test "2 and 3 words" test-hash-table (hash-table-keys-values (group-by-size (str:string-tokenize "da bin ich") (ht:make-hash-table))))))        
-        (ts:test-group "adjust"
+        (ts:test-group "unbalanced"
             (ts:test "unbalanced- empty string" '() (unbalanced ""))
             (ts:test "unbalanced- (" '(0) (unbalanced "("))
             (ts:test "unbalanced- ())" '(2) (unbalanced "())"))
-            (ts:test "unbalanced- (((((" '(0 1 2 3 4) (unbalanced "((((("))
-            (ts:test "adjust- (" "()" (adjust "(" 2)))))
+            (ts:test "unbalanced- (((((" '(0 1 2 3 4) (unbalanced "(((((")))
+        (ts:test-group "adjust"    
+            (ts:test "adjust- (" ":(" (adjust "(" 1))
+            (ts:test "adjust- )" ":)" (adjust ")" 10))
+            (ts:test "adjust- genau)" "genau:)" (adjust "genau)" 10))
+            (ts:test "adjust- )genau)" "(genau)" (adjust ")genau)" 10))
+            (ts:test "adjust- (genau)" "(genau)" (adjust "(genau)" 10))
+            (ts:test "adjust- (genau(" "(genau)" (adjust "(genau(" 10))
+            (ts:test "adjust- (ge(nau(" "(ge)nau:(" (adjust "(ge(nau(" 10)))))
 
