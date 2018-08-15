@@ -6,3 +6,4 @@ chicken-install spiffy
 chicken-install intarweb
 chicken-install medea
 chicken-install spiffy-uri-match
+chicken-install utf8
