@@ -6,7 +6,6 @@
     (require-library data-structures test section-combinators uni-combinators extras random-bsd srfi-69 utf8-srfi-13 irregex utils stack)
     (import (prefix extras ext:) (prefix data-structures ds:) (prefix random-bsd rnd:) (prefix srfi-69 ht:) (prefix utf8-srfi-13 str:) (prefix irregex rg:) (prefix test ts:) (prefix utils ut:) (prefix stack st:) (prefix section-combinators sc:) (prefix uni-combinators un:))
 
-    ;;TODO: improve handling of punctuation in general
     ;;Entry point for text generation.                                
     (define (generate what max-chars)        
         (capitalize (cond ((eq? what 'name) (generate-name max-chars))
@@ -69,11 +68,9 @@
                 (let* ((possible-words (list->vector (ht:hash-table-ref/default source-text prefix '())))
                        (word (if (= (vector-length possible-words) 0) #f (vector-ref possible-words (rnd:random-fixnum (vector-length possible-words))))))  
                     (if (or (eq? word #f) (> (string-length word) (- max-chars 1)))
-                        (adjust (str:string-join (reverse text) " ") max-chars)                        
+                        (punctuate (adjust (str:string-join (reverse text) " ") max-chars) (- max-chars 1))
                         (describe (cons word text) (- max-chars (string-length word) 1) (string-append (second (str:string-tokenize prefix)) " " word)))))))                            
     
-    ;;TODO: not allow the text to end in anything other than . ? ! ...
-    ;;TODO: if the text ends in a conjunction or article, add ellipsis or remove it
     ;;Balances brackets, adding a smiling face in case of an odd number of brackets.
     (define (adjust text remaining-chars)
         (let loop ((positions (unbalanced text))
@@ -85,6 +82,15 @@
                               (insert-smiley text single)
                               (insert-bracket text single count)))
                 ((p . ositions) (loop ositions (insert-bracket text p count) (+ count 1))))))                          
+    ;;TODO: not allow the text to end in anything other than . ? ! ...
+    ;;TODO: if the text ends in a conjunction or article, add ellipsis or remove it
+    (define (punctuate text remaining-chars)
+        (let ((split-text (str:string-tokenize text))
+              (bad-punctuation (list ";" "-" "--" ":" ","))  
+              (good-punctuation (list "." "!" "?" "..."))
+              (articles (list "a" "an" "the")))             
+            text))    
+
     (define (insert-smiley text position)                
         (if (char=? #\) (string-ref text position))
             (str:string-replace text ":" position position)            
