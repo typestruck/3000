@@ -68,7 +68,7 @@
                 (let* ((possible-words (list->vector (ht:hash-table-ref/default source-text prefix '())))
                        (word (if (= (vector-length possible-words) 0) #f (vector-ref possible-words (rnd:random-fixnum (vector-length possible-words))))))  
                     (if (or (eq? word #f) (> (string-length word) (- max-chars 1)))
-                        (punctuate (adjust (str:string-join (reverse text) " ") max-chars) (- max-chars 1))
+                        (punctuate (adjust (str:string-trim-both (str:string-join (reverse text) " ")) max-chars) (- max-chars 1))
                         (describe (cons word text) (- max-chars (string-length word) 1) (string-append (second (str:string-tokenize prefix)) " " word)))))))                            
     
     ;;Balances brackets, adding a smiling face in case of an odd number of brackets.
@@ -85,11 +85,21 @@
     ;;TODO: not allow the text to end in anything other than . ? ! ...
     ;;TODO: if the text ends in a conjunction or article, add ellipsis or remove it
     (define (punctuate text remaining-chars)
-        (let ((split-text (str:string-tokenize text))
-              (bad-punctuation (list ";" "-" "--" ":" ","))  
-              (good-punctuation (list "." "!" "?" "..."))
-              (articles (list "a" "an" "the")))             
-            text))    
+        (define (clean-of token baddie)
+            (match baddie
+                (() token)
+                ((b . addie) (let ((size (str:string-length b)))
+                                (if (= (str:string-suffix-length-ci token b) size)
+                                    (str:string-drop-right token size)
+                                    (clean-of token addie))))))
+        (let* ((last-token (str:string-copy (+ (str:string-index-right text " ") 1)))
+               (clean-last-token (clean-of last-token (list ";" "-" "--" ":" ",")))
+               (article (find (ls = clean-last-token) (list "a" "an" "the")))
+               (good-punctuation (list "." "!" "?" "...")))
+            (if article 
+                (let ((dropped (+ (str:string-length article) 1 (- (str:string-length last-token)))))
+                    (punctuate (str:string-drop-right text dropped) (+ remaining-chars dropped)))
+                text)))) ;; finish adding from good-punctuation        
 
     (define (insert-smiley text position)                
         (if (char=? #\) (string-ref text position))
