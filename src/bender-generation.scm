@@ -1,6 +1,6 @@
 (declare (unit bender-generation))
 
-(module bender-generation (generate test-suite)
+(module bender-generation (generate test-suite punctuate)
     (import (except scheme string-length string-ref string-set! make-string string substring string->list list->string string-fill! write-char read-char display) (except chicken reverse-list->string print print*))
     (require-extension matchable srfi-1 utf8)
     (require-library data-structures test section-combinators uni-combinators extras random-bsd srfi-69 utf8-srfi-13 irregex utils stack)
@@ -82,24 +82,22 @@
                               (insert-smiley text single)
                               (insert-bracket text single count)))
                 ((p . ositions) (loop ositions (insert-bracket text p count) (+ count 1))))))                          
-    ;;TODO: not allow the text to end in anything other than . ? ! ...
-    ;;TODO: if the text ends in a conjunction or article, add ellipsis or remove it
     (define (punctuate text remaining-chars)
         (define (clean-of token baddie)
             (match baddie
                 (() token)
-                ((b . addie) (let ((size (str:string-length b)))
+                ((b . addie) (let ((size (string-length b)))
                                 (if (= (str:string-suffix-length-ci token b) size)
                                     (str:string-drop-right token size)
                                     (clean-of token addie))))))
-        (let* ((last-token (str:string-copy (+ (str:string-index-right text " ") 1)))
+        (let* ((last-token (str:string-copy (+ (str:string-index-right text #\space) 1)))
                (clean-last-token (clean-of last-token (list ";" "-" "--" ":" ",")))
                (article (find (ls = clean-last-token) (list "a" "an" "the")))
-               (good-punctuation (list "." "!" "?" "...")))
+               (good-punctuation (list->vector (filter (ls <= remaining-chars) (list "." "!" "?" "...")))))
             (if article 
-                (let ((dropped (+ (str:string-length article) 1 (- (str:string-length last-token)))))
-                    (punctuate (str:string-drop-right text dropped) (+ remaining-chars dropped)))
-                text)))) ;; finish adding from good-punctuation        
+                (let ((dropped (+ (string-length article) 1 (- (string-length last-token)))))
+                     (punctuate (str:string-drop-right text dropped) (+ remaining-chars dropped)))
+                (vector-ref good-punctuation (rnd:random-fixnum (vector-length good-punctuation))))))
 
     (define (insert-smiley text position)                
         (if (char=? #\) (string-ref text position))
@@ -134,17 +132,17 @@
         (if (ht:hash-table-exists? hash-table key)
             (ht:hash-table-set! hash-table key (updater (ht:hash-table-ref hash-table key)))
             (ht:hash-table-set! hash-table key default)))
-    
+        
     ;; Groups the grammatical classes into word length, so it is easier to compose names later.
     (define (group-by-size words hash-table)
         (match words
-            ;;so we can use random indexes later on     
+                ;;so we can use random indexes later on     
             (() (begin (ht:hash-table-walk hash-table (lambda (key value) (ht:hash-table-set! hash-table key (list->vector value))))
-                       hash-table))
-            ;;hash-table doesnt have a persistent interface, the alternative persistent-hash-table has a bug when adding existing keys           
+                    hash-table))
+                ;;hash-table doesnt have a persistent interface, the alternative persistent-hash-table has a bug when adding existing keys           
             ((w . ords) (begin (sane-hash-table-update!/default hash-table (string-length w) (ls cons w) (list w))
-                               (group-by-size ords hash-table))))) 
-    
+                            (group-by-size ords hash-table))))) 
+        
     ;; The database of words, grouped by grammatical class and then word size.    
     (define grammatical-classes
         (ht:alist->hash-table (list (cons 'adjectives (group-by-size (ext:read-lines "data/adjectives") (ht:make-hash-table)))
@@ -153,26 +151,26 @@
                                     (cons 'verbs (group-by-size (ext:read-lines "data/verbs") (ht:make-hash-table)))
                                     (cons 'adverbs (group-by-size (ext:read-lines "data/adverbs") (ht:make-hash-table)))
                                     (cons 'other (group-by-size (ext:read-lines "data/other") (ht:make-hash-table))))))
-                                    
+                                        
     ;; Groups a string by triplets, e.g., "da bin ich, genau" => (("da bin", "ich,"), ("bin ich,", "genau" ), ("ich, genau", ""))
     (define (group-by-prefix words hash-table)
         (define (update key-1 key-2 value)            
             (begin (sane-hash-table-update!/default hash-table (string-append key-1 " " key-2) (ls cons value) (list value))
-                   hash-table))
+                hash-table))
         (match words                
             ((w o . rds) (if (not (null? rds)) (group-by-prefix (cons o rds) (update w o (car rds))) (update w o "")))
             (_ hash-table)))
 
-    ;; The input text used to build a markov chain, as a hash table.
+        ;; The input text used to build a markov chain, as a hash table.
     (define source-text
         (group-by-prefix (str:string-tokenize (ut:read-all "data/source-text")) (ht:make-hash-table)))        
-            
-    ;; Helper to compare hash tables.
+                
+        ;; Helper to compare hash tables.
     (define (hash-table-keys-values ht)
         (define (->string obj) (if (number? obj) (number->string obj) obj))
         (define (->list obj) (if (vector? obj) (vector->list obj) obj))
         (cons (ds:sort (map ->string (ht:hash-table-keys ht)) str:string<) 
-              (list (ds:sort (ds:flatten (map ->list (ht:hash-table-values ht))) str:string<))))
+            (list (ds:sort (ds:flatten (map ->list (ht:hash-table-values ht))) str:string<))))
 
     (define (test-suite)                
         (ts:test-group "group-by-prefix"
@@ -196,5 +194,7 @@
             (ts:test "adjust- )genau)" "(genau)" (adjust ")genau)" 10))
             (ts:test "adjust- (genau)" "(genau)" (adjust "(genau)" 10))
             (ts:test "adjust- (genau(" "(genau)" (adjust "(genau(" 10))
-            (ts:test "adjust- (ge(nau(" "(ge)nau:(" (adjust "(ge(nau(" 10)))))
+            (ts:test "adjust- (ge(nau(" "(ge)nau:(" (adjust "(ge(nau(" 10)))
+        (ts:test-group "punctuate"
+            (ts:test "punctuate- no remaining chars and nothing to change" "test test" (punctuate "test test" 0)))))            
 
