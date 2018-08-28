@@ -81,7 +81,8 @@
                 ((single) (if (and (odd? count) (> remaining-chars 0))
                               (insert-smiley text single)
                               (insert-bracket text single count)))
-                ((p . ositions) (loop ositions (insert-bracket text p count) (+ count 1))))))                          
+                ((p . ositions) (loop ositions (insert-bracket text p count) (+ count 1))))))       
+                                       
     (define (punctuate text remaining-chars)
         (define (clean-of token baddie)
             (match baddie
@@ -90,14 +91,14 @@
                                 (if (= (str:string-suffix-length-ci token b) size)
                                     (str:string-drop-right token size)
                                     (clean-of token addie))))))
-        (let* ((last-token (str:string-copy (+ (str:string-index-right text #\space) 1)))
+        (let* ((last-token (str:string-copy text (+ (str:string-index-right text #\space) 1)))
                (clean-last-token (clean-of last-token (list ";" "-" "--" ":" ",")))
-               (article (find (ls = clean-last-token) (list "a" "an" "the")))
-               (good-punctuation (list->vector (filter (ls <= remaining-chars) (list "." "!" "?" "...")))))
-            (if article 
-                (let ((dropped (+ (string-length article) 1 (- (string-length last-token)))))
-                     (punctuate (str:string-drop-right text dropped) (+ remaining-chars dropped)))
-                (vector-ref good-punctuation (rnd:random-fixnum (vector-length good-punctuation))))))
+               (article (find (ls str:string= clean-last-token) (list "a" "an" "the")))
+               (good-punctuation (list->vector (filter (c (ls >= remaining-chars) string-length) (list "." "!" "?" "...")))))
+            (cond (article (let ((dropped (+ (string-length article) 1 (- (string-length last-token)))))
+                                (punctuate (str:string-drop-right text dropped) (+ remaining-chars dropped))))
+                  ((> (vector-length good-punctuation) 0) (string-append text (vector-ref good-punctuation (rnd:random-fixnum (vector-length good-punctuation)))))
+                  (else text))))
 
     (define (insert-smiley text position)                
         (if (char=? #\) (string-ref text position))
@@ -196,5 +197,11 @@
             (ts:test "adjust- (genau(" "(genau)" (adjust "(genau(" 10))
             (ts:test "adjust- (ge(nau(" "(ge)nau:(" (adjust "(ge(nau(" 10)))
         (ts:test-group "punctuate"
-            (ts:test "punctuate- no remaining chars and nothing to change" "test test" (punctuate "test test" 0)))))            
+            (ts:test "punctuate- no remaining chars and nothing to change" "test test" (punctuate "test test" 0))
+            ;set parameter current-test-comparator to test random final punctuation
+            (ts:test "punctuate- no remaining chars but extra punctuation" "test test" (punctuate "test test," 0))       
+            (ts:test "punctuate- no remaining chars but article" "test test" (punctuate "test test a" 0))           
+            (ts:test "punctuate- no remaining chars but article and punctuation" "test test" (punctuate "test test a;" 0)))))           
+
+                        
 
