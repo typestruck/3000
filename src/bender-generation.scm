@@ -200,11 +200,12 @@
             (ts:test "adjust- (genau(" "(genau)" (adjust "(genau(" 10))
             (ts:test "adjust- (ge(nau(" "(ge)nau:(" (adjust "(ge(nau(" 10)))
         (ts:test-group "punctuate"
-            (ts:test "punctuate- no remaining chars and nothing to change" "test test" (punctuate "test test" 0)))))
-            ; (ts:current-test-comparator (lambda (expected actual) (any (lambda (good) (str:string= actual (string-append expected good))) +good-punctuation+)))
-            ; (ts:test "punctuate- no remaining chars but extra punctuation" "test test" (punctuate "test test," 0))
-            ; (ts:test "punctuate- no remaining chars but article" "test test" (punctuate "test test a" 0))           
-            ; (ts:test "punctuate- no remaining chars but article and punctuation" "test test" (punctuate "test test a;" 0)))))           
+            (ts:test "punctuate- no remaining chars and nothing to change" "test test" (punctuate "test test" 0))
+            (ts:current-test-comparator (lambda (expected actual) (any (lambda (good) (str:string= actual (string-append expected good))) +good-punctuation+)))
+            (ts:test "punctuate- no remaining chars but extra punctuation" "test test" (punctuate "test test," 0))
+            (ts:test "punctuate- no remaining chars but article" "test test" (punctuate "test test a" 0))           
+            (ts:test "punctuate- no remaining chars but article and punctuation" "test test" (punctuate "test test a;" 0)))   
+        (ts:test-exit)))            
 
                         
 
