@@ -1,6 +1,6 @@
 (declare (unit bender-generation))
 
-(module bender-generation (generate test-suite punctuate)
+(module bender-generation (generate test-suite)
     (import (except scheme string-length string-ref string-set! make-string string substring string->list list->string string-fill! write-char read-char display) (except chicken reverse-list->string print print*))
     (require-extension matchable srfi-1 utf8)
     (require-library data-structures test section-combinators uni-combinators extras random-bsd srfi-69 utf8-srfi-13 irregex utils stack)
@@ -206,6 +206,3 @@
             (ts:test "punctuate- no remaining chars but article" "test test" (punctuate "test test a" 0))           
             (ts:test "punctuate- no remaining chars but article and punctuation" "test test" (punctuate "test test a;" 0)))   
         (ts:test-exit)))            
-
-                        
-
