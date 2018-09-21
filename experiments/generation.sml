@@ -1,6 +1,33 @@
-datatype generating = Name | Description
-
 val seed = Random.rand (1, (Date.second o Date.fromTimeLocal o Time.now) ())
+
+
+(* 
+Groups the grammatical classes into word length, so it is easier to compose names later.
+*)
+fun groupBySize words hash-table
+        (match words
+                ;;so we can use random indexes later on     
+            (() (begin (ht:hash-table-walk hash-table (lambda (key value) (ht:hash-table-set! hash-table key (list->vector value))))
+                    hash-table))
+                ;;hash-table doesnt have a persistent interface, the alternative persistent-hash-table has a bug when adding existing keys           
+            ((w . ords) (begin (sane-hash-table-update!/default hash-table (string-length w) (ls cons w) (list w))
+                            (groupBySize ords hash-table))))) 
+
+(* 
+The database of words, grouped by grammatical class and then word size.
+*)
+val grammaticalClasses =
+    (ht:alist->hash-table (list (cons 'adjectives (groupBySize (ext:read-lines "data/adjectives") (ht:make-hash-table)))
+                                (cons 'nouns (groupBySize (ext:read-lines "data/nouns") (ht:make-hash-table)))
+                                (cons 'plural-nouns (groupBySize (ext:read-lines "data/plural-nouns") (ht:make-hash-table)))
+                                (cons 'verbs (groupBySize (ext:read-lines "data/verbs") (ht:make-hash-table)))
+                                (cons 'adverbs (groupBySize (ext:read-lines "data/adverbs") (ht:make-hash-table)))
+                                (cons 'other (groupBySize (ext:read-lines "data/other") (ht:make-hash-table))))))
+
+
+
+
+datatype generating = Name | Description
 
 fun randomNumber max = Random.randRange (1, max) seed
 
@@ -11,16 +38,26 @@ fun shouldHappen outOf = randomNumber 100 <= outOf
 
 fun describe maxChars = raise Fail "not implemented"
 
+(define (next-word key-word max-chars)                
+        (let* ((class (ht:hash-table-ref grammaticalClasses key-word))                       
+                (sizes (list->vector (filter (rs <= (- max-chars 1)) (ht:hash-table-keys class))))
+                (total-sizes (vector-length sizes)))
+            (if (= total-sizes 0)
+                #f
+                (let ((words (ht:hash-table-ref class (vector-ref sizes (rnd:random-fixnum (- total-sizes 1))))))
+                    (vector-ref words (rnd:random-fixnum (- (vector-length words) 1))))))))         
+
 (* 
 Stitches together a string according to a given scheme and max-chars.        
- *)
+*)
 fun makeName = 
 
     (define (make-name name keys max-chars)
         (let ((word (if (or (null? keys) (< max-chars 0)) #f (next-word (car keys) max-chars))))
             (if (not word)
                 (reverse name) 
-                (make-name (cons word name) (cdr keys) (- max-chars (string-length word))))))      
+                (make-name (cons word name) (cdr keys) (- max-chars (string-length word))))))   
+
 
 (* 
 A "simple name" is a string containing <adjective> [, <adjective>] <noun>.
@@ -47,8 +84,7 @@ fun generate what maxChars  =
 (*
     (define +good-punctuation+ (list "." "!" "?" "..."))
 
-    (define (generate-name max-chars)      
-        (if (should-happen 60) (simple-name max-chars) (complex-name max-chars)))                          
+                          
 
     ;;Upcases the first letter in a string.
     (define (capitalize name)
@@ -65,20 +101,7 @@ fun generate what maxChars  =
 
                   
 
-    ;;If key-word is a string, returns it verbatim; otherwise looks up a word in grammatical-classes key-word who fits into max-chars.
-    (define (next-word key-word max-chars)                
-        (if (string? key-word)
-            ;; - 1 so we can add spaces later
-            (if (< (- max-chars 1) (string-length key-word))
-                #f
-                key-word)
-            (let* ((class (ht:hash-table-ref grammatical-classes key-word))                       
-                   (sizes (list->vector (filter (rs <= (- max-chars 1)) (ht:hash-table-keys class))))
-                   (total-sizes (vector-length sizes)))
-                (if (= total-sizes 0)
-                    #f
-                    (let ((words (ht:hash-table-ref class (vector-ref sizes (rnd:random-fixnum (- total-sizes 1))))))
-                        (vector-ref words (rnd:random-fixnum (- (vector-length words) 1))))))))                    
+              
 
     ;;Descriptions are markov chains.        
     (define (generate-description max-chars)
@@ -156,24 +179,9 @@ fun generate what maxChars  =
             (ht:hash-table-set! hash-table key (updater (ht:hash-table-ref hash-table key)))
             (ht:hash-table-set! hash-table key default)))
         
-    ;; Groups the grammatical classes into word length, so it is easier to compose names later.
-    (define (group-by-size words hash-table)
-        (match words
-                ;;so we can use random indexes later on     
-            (() (begin (ht:hash-table-walk hash-table (lambda (key value) (ht:hash-table-set! hash-table key (list->vector value))))
-                    hash-table))
-                ;;hash-table doesnt have a persistent interface, the alternative persistent-hash-table has a bug when adding existing keys           
-            ((w . ords) (begin (sane-hash-table-update!/default hash-table (string-length w) (ls cons w) (list w))
-                            (group-by-size ords hash-table))))) 
+    
         
-    ;; The database of words, grouped by grammatical class and then word size.    
-    (define grammatical-classes
-        (ht:alist->hash-table (list (cons 'adjectives (group-by-size (ext:read-lines "data/adjectives") (ht:make-hash-table)))
-                                    (cons 'nouns (group-by-size (ext:read-lines "data/nouns") (ht:make-hash-table)))
-                                    (cons 'plural-nouns (group-by-size (ext:read-lines "data/plural-nouns") (ht:make-hash-table)))
-                                    (cons 'verbs (group-by-size (ext:read-lines "data/verbs") (ht:make-hash-table)))
-                                    (cons 'adverbs (group-by-size (ext:read-lines "data/adverbs") (ht:make-hash-table)))
-                                    (cons 'other (group-by-size (ext:read-lines "data/other") (ht:make-hash-table))))))
+    
                                         
     ;; Groups a string by triplets, e.g., "da bin ich, genau" => (("da bin", "ich,"), ("bin ich,", "genau" ), ("ich, genau", ""))
     (define (group-by-prefix words hash-table)
@@ -202,9 +210,9 @@ fun generate what maxChars  =
                 (ts:test "bad input" (hash-table-keys-values (ht:make-hash-table)) (hash-table-keys-values (group-by-prefix "da bin" (ht:make-hash-table))))
                 (ts:test "string 3 words" test-hash-table-3 (hash-table-keys-values (group-by-prefix (str:string-tokenize "da bin ich") (ht:make-hash-table))))
                 (ts:test "string 4 words" test-hash-table-4 (hash-table-keys-values (group-by-prefix (str:string-tokenize "da bin ich, genau") (ht:make-hash-table))))))
-        (ts:test-group "group-by-size"
+        (ts:test-group "groupBySize"
             (let ((test-hash-table (hash-table-keys-values (ht:alist->hash-table (list (cons 2 (list "da")) (cons 3 (list "bin" "ich")))))))                
-                (ts:test "2 and 3 words" test-hash-table (hash-table-keys-values (group-by-size (str:string-tokenize "da bin ich") (ht:make-hash-table))))))        
+                (ts:test "2 and 3 words" test-hash-table (hash-table-keys-values (groupBySize (str:string-tokenize "da bin ich") (ht:make-hash-table))))))        
         (ts:test-group "unbalanced"
             (ts:test "unbalanced- empty string" '() (unbalanced ""))
             (ts:test "unbalanced- (" '(0) (unbalanced "("))
