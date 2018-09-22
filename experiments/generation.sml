@@ -17,22 +17,30 @@ fun groupBySize words hashTable =
                 val value = HashTable.lookup key hashTable
                 val _ = IntHashTable.insert hashTable (key, w :: getOpt (value, [])) 
             in groupBySize ords hashTable         
+            end
+
+fun grammaticalClassToString Adjective = "Adjective"
+  | grammaticalClassToString Noun = "Noun"
+  | grammaticalClassToString PluralNoun = "PluralNoun"
+  | grammaticalClassToString Verb = "Verb"
+  | grammaticalClassToString Adverb = "Adverb"
+  | grammaticalClassToString Other = "Other"
 
 (* 
 The database of words, grouped by grammatical class and then word size.
 *)
-val grammaticalClasses = HashTable.mkTable (('a -> word) * (('a * 'a) -> bool)) -> (int * exn) -> ('a,'b) hash_table 
-    (ht:alist->hash-table (list (cons 'adjectives (groupBySize (ext:read-lines "data/adjectives") (ht:make-hash-table)))
-                                (cons 'nouns (groupBySize (ext:read-lines "data/nouns") (ht:make-hash-table)))
-                                (cons 'plural-nouns (groupBySize (ext:read-lines "data/plural-nouns") (ht:make-hash-table)))
-                                (cons 'verbs (groupBySize (ext:read-lines "data/verbs") (ht:make-hash-table)))
-                                (cons 'adverbs (groupBySize (ext:read-lines "data/adverbs") (ht:make-hash-table)))
-                                (cons 'other (groupBySize (ext:read-lines "data/other") (ht:make-hash-table))))))
-
-
-
-
-
+val grammaticalClasses =
+    let val ht = HashTable.mkTable(HashString.hashString, op= )(6, Domain)
+        fun tokenize fileName =
+            let fun go = String.tokens Char.isSpace o TextIO.inputAll o TextIO.openIn 
+                val tokens = go fileName
+                val _ = TextIO.closeIn fileName
+            in tokens 
+            end   
+        fun prepare (class, file) = (grammaticalClassToString class, groupBySize (tokenize file))
+        val _ = List.app (HashTable.insert ht o prepare) [(Adjective, "../data/adjectives"), (Nouns,  "../data/nouns"), (PluralNouns, "../data/plural-nouns"), (Verbs, "../data/verbs"), (Adverbs,"../data/adverbs"), (Other, "../data/other")]
+    in ht
+    end
 
 fun randomNumber max = Random.randRange (1, max) seed
 
@@ -199,7 +207,7 @@ fun generate what maxChars  =
 
     ;; The input text used to build a markov chain, as a hash table.
     (define source-text
-        (group-by-prefix (str:string-tokenize (ut:read-all "data/source-text")) (ht:make-hash-table)))        
+        (group-by-prefix (str:string-tokenize (ut:read-all "../data/source-text")) (ht:make-hash-table)))        
                 
     ;; Helper to compare hash tables.
     (define (hash-table-keys-values ht)
