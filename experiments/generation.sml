@@ -1,22 +1,27 @@
+datatype generating = Name | Description
+
+datatype grammaticalClass = Adjective | Noun | PluralNoun | Verb | Adverb | Other
+
 val seed = Random.rand (1, (Date.second o Date.fromTimeLocal o Time.now) ())
 
+val ht : string list IntHashTable.hash_table = IntHashTable.mkTable (50, Domain);
 
 (* 
 Groups the grammatical classes into word length, so it is easier to compose names later.
 *)
-fun groupBySize words hash-table
-        (match words
-                ;;so we can use random indexes later on     
-            (() (begin (ht:hash-table-walk hash-table (lambda (key value) (ht:hash-table-set! hash-table key (list->vector value))))
-                    hash-table))
-                ;;hash-table doesnt have a persistent interface, the alternative persistent-hash-table has a bug when adding existing keys           
-            ((w . ords) (begin (sane-hash-table-update!/default hash-table (string-length w) (ls cons w) (list w))
-                            (groupBySize ords hash-table))))) 
+fun groupBySize words hashTable =
+    case word of 
+          [] => IntHashTable.map Array.fromList hashTable
+        | w :: ords =>
+            let val key = String.size w
+                val value = HashTable.lookup key hashTable
+                val _ = IntHashTable.insert hashTable (key, w :: getOpt (value, [])) 
+            in groupBySize ords hashTable         
 
 (* 
 The database of words, grouped by grammatical class and then word size.
 *)
-val grammaticalClasses =
+val grammaticalClasses = HashTable.mkTable (('a -> word) * (('a * 'a) -> bool)) -> (int * exn) -> ('a,'b) hash_table 
     (ht:alist->hash-table (list (cons 'adjectives (groupBySize (ext:read-lines "data/adjectives") (ht:make-hash-table)))
                                 (cons 'nouns (groupBySize (ext:read-lines "data/nouns") (ht:make-hash-table)))
                                 (cons 'plural-nouns (groupBySize (ext:read-lines "data/plural-nouns") (ht:make-hash-table)))
@@ -27,7 +32,7 @@ val grammaticalClasses =
 
 
 
-datatype generating = Name | Description
+
 
 fun randomNumber max = Random.randRange (1, max) seed
 
