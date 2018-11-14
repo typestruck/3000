@@ -1,0 +1,8 @@
+[package]
+name = "mock-rust"
+version = "0.1.0"
+authors = ["Eduardo Asafe <azafeh@azafeh.com>"]
+
+[dependencies]
+rand = "0.5"
+actix-web = "0.7"

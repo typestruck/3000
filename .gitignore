@@ -5,5 +5,8 @@
 .#*.scm
 notes
 bender
+mock
 *.o
+target/
 *.import.*
+*.ibc
