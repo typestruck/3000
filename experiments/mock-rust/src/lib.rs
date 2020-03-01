@@ -10,6 +10,11 @@ pub mod bender {
     use std::fs;
     use std::string::ToString;
 
+    #[no_mangle]
+    fn generate_name() -> String {
+        return simple_name(100);
+    }
+
     #[derive(Display, Debug, PartialEq, Eq, Hash, Clone)]
     enum GrammaticalClass {
         Adjectives,
@@ -87,9 +92,8 @@ pub mod bender {
         if names.len() == 3 {
             return format!("{}, {} {}", names[0], names[1], names[2]);
         }
-        else {
-            return names.join(" ");
-        }
+        
+        return names.join(" ");
     }
 
     /// Given a list, returns values according to their chance of occuring.

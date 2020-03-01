@@ -1,9 +1,13 @@
 [package]
 name = "mock-rust"
 version = "0.1.0"
-authors = ["Eduardo Asafe <azafeh@azafeh.com>"]
+authors = ["Eduardo Asafe <e@asafe.dev>"]
 
 [dependencies]
 strum = "0.11"
 strum_macros = "0.11"
 rand = "0.5"
+
+[lib]
+name = "bender"
+crate-type = ["dylib"]
