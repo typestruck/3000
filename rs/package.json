@@ -1,5 +1,5 @@
 {
-  "name": "s",
+  "name": "bender",
   "version": "0.1.0",
   "description": "",
   "main": "lib/index.js",
@@ -9,6 +9,7 @@
     "neon-cli": "^0.3.3"
   },
   "scripts": {
+    "run" : "node lib/index.js",
     "install": "neon build"
   }
 }
