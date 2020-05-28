@@ -1,0 +1,24 @@
+[package]
+name = "rs"
+version = "0.1.0"
+authors = ["Eduardo Asafe <e@asafe.dev>"]
+license = "MIT"
+build = "build.rs"
+exclude = ["artifacts.json", "index.node"]
+
+[lib]
+name = "rs"
+crate-type = ["cdylib"]
+
+[build-dependencies]
+neon-build = "0.3.3"
+
+[dependencies]
+neon = "0.3.3"
+strum = "0.11"
+strum_macros = "0.11"
+rand = "0.5"
+num-traits = "0.2"
+num-derive = "0.3"
+either = "1.5.3"
+lazy_static = "1.4.0"

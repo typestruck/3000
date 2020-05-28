@@ -1,12 +1,4 @@
-*.ss#*
-.#*.ss
-*.scm~
-*.scm#*
-.#*.scm
-notes
-bender
-mock
-*.o
-target/
-*.import.*
-*.ibc
+node_modules
+native/target
+artifacts.json
+*.node

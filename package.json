@@ -1,0 +1,15 @@
+{
+  "name": "bender",
+  "version": "0.1.0",
+  "description": "",
+  "main": "lib/index.js",
+  "author": "Eduardo Asafe <e@asafe.dev>",
+  "license": "MIT",
+  "dependencies": {
+    "neon-cli": "^0.3.3"
+  },
+  "scripts": {
+    "run" : "node lib/index.js",
+    "install": "neon build"
+  }
+}
