@@ -236,6 +236,7 @@ name = "rs"
 version = "0.1.0"
 dependencies = [
  "either",
+ "lazy_static",
  "neon",
  "neon-build",
  "num-derive",
@@ -243,7 +244,6 @@ dependencies = [
  "rand",
  "strum",
  "strum_macros",
- "unicode-segmentation",
 ]
 
 [[package]]
