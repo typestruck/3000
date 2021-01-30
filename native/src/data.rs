@@ -16,7 +16,6 @@ macro_rules! map(
 lazy_static! {
         /// The database of words, grouped by grammatical class and then word size
         pub static ref GRAMATICAL_CLASSES: HashMap<GrammaticalClass, HashMap<u8, Vec<&'static str>>> = {
-                println!("creating classsss");
                 return map! {
                         GrammaticalClass::Other => map! {
                                     12u8 => vec!["nevertheless"],
@@ -112,7 +111,6 @@ lazy_static! {
 
         ///The source text grouped by (word, next word) [following words]
         pub static ref MARKOV_CHAIN: HashMap<(&'static str, &'static str), Vec<&'static str>> = {
-                println!("creeeeating ref");
                 let source = include!("data/source-text");
                 let split_words: Vec<&str> = source.split_ascii_whitespace().collect();
                 let mut markov_chain: HashMap<(&str, &str), Vec<&str>> = HashMap::new();
