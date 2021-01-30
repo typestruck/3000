@@ -1,10 +1,6 @@
-# Bender
+# 3000
 
-Bender is a IM bot, text generation and summary service, primarily intended to help my other projects.
-
-## Getting started
-
-Bender is written in Rust and intended to be embedded in other projects.
+3000 is a IM bot, text generation and summary service, written in Rust and intended to be embedded in other projects
 
 ## Available functions
 
