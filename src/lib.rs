@@ -1,5 +1,3 @@
-extern crate neon;
-extern crate strum;
 #[macro_use]
 extern crate strum_macros;
 extern crate either;
@@ -21,8 +19,8 @@ use types::*;
 use num_traits::FromPrimitive;
 
 fn generate(mut cx: FunctionContext) -> JsResult<JsString> {
-        let what = cx.argument::<JsNumber>(0)?.value();
-        let chars = cx.argument::<JsNumber>(1)?.value() as u16;
+        let what = cx.argument::<JsNumber>(0)?.value(&mut cx);
+        let chars = cx.argument::<JsNumber>(0)?.value(&mut cx) as u16;
         let result = match FromPrimitive::from_f64(what) {
                 Some(What::Name) => generate_name(chars as u8),
                 Some(What::Description) => generate_description(chars),
@@ -32,8 +30,6 @@ fn generate(mut cx: FunctionContext) -> JsResult<JsString> {
         return Ok(cx.string(capitalize(result)));
 }
 
-register_module!(mut cx, { cx.export_function("generate", generate) });
-
 fn capitalize(text: String) -> String {
         let mut letters = text.chars();
 
@@ -41,6 +37,12 @@ fn capitalize(text: String) -> String {
                 None => String::new(),
                 Some(l) => l.to_uppercase().chain(letters).collect(),
         }
+}
+
+#[neon::main]
+fn main(mut cx: ModuleContext) -> NeonResult<()> {
+    cx.export_function("generate", generate)?;
+    Ok(())
 }
 
 #[cfg(test)]

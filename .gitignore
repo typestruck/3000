@@ -1,4 +1,4 @@
 node_modules
-native/target
+target/
 artifacts.json
 *.node
