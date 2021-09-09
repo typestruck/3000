@@ -1,4 +1,4 @@
-use data::MARKOV_CHAIN;
+use crate::data::MARKOV_CHAIN;
 use rand::Rng;
 
 /// Descriptions are markov chains

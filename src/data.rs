@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use types::*;
+use crate::types::*;
+use lazy_static::lazy_static;
 
 macro_rules! map(
         { $($key:expr => $value:expr),+ } => {

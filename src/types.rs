@@ -1,4 +1,5 @@
-use num_derive::FromPrimitive;    
+use num_derive::FromPrimitive;
+use strum_macros::{Display};
 
 #[derive(Display, Debug, PartialEq, Eq, Hash, Clone)]
 pub enum GrammaticalClass {

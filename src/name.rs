@@ -1,8 +1,8 @@
-use data::GRAMATICAL_CLASSES;
 use either::Either;
 use either::Either::*;
 use rand::Rng;
-use types::*;
+use crate::types::*;
+use crate::data::GRAMATICAL_CLASSES;
 
 /// Names are generated according to the following patterns:
 ///  <adjective> [, <adjective>] <noun>

@@ -1,12 +1,3 @@
-#[macro_use]
-extern crate strum_macros;
-extern crate either;
-extern crate num_derive;
-extern crate num_traits;
-extern crate rand;
-#[macro_use]
-extern crate lazy_static;
-
 mod data;
 mod name;
 mod description;
