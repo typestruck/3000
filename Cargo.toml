@@ -1,5 +1,5 @@
 [package]
-name = "rs"
+name = "threek"
 version = "0.2.0"
 authors = ["Eduardo Asafe <e@asafe.dev>"]
 license = "MIT"

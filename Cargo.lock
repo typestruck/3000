@@ -204,20 +204,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c33a3c44ca05fa6f1807d8e6743f3824e8509beca625669633be0acbdf509dc"
 
 [[package]]
-name = "rs"
-version = "0.2.0"
-dependencies = [
- "either",
- "lazy_static",
- "neon",
- "num-derive",
- "num-traits",
- "rand",
- "strum",
- "strum_macros",
-]
-
-[[package]]
 name = "semver"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -276,6 +262,20 @@ dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
  "unicode-xid 0.2.2",
+]
+
+[[package]]
+name = "threek"
+version = "0.2.0"
+dependencies = [
+ "either",
+ "lazy_static",
+ "neon",
+ "num-derive",
+ "num-traits",
+ "rand",
+ "strum",
+ "strum_macros",
 ]
 
 [[package]]
