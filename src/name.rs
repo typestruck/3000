@@ -75,7 +75,7 @@ fn make_names(
         return names;
 }
 
-/// Pick a gramatical class random word up to the given size
+/// Pick a grammatical class random word up to the given size
 fn get_word(
         class: GrammaticalClass,
         remaining_chars: u8,
@@ -97,7 +97,7 @@ fn get_word(
         return None;
 }
 
-/// Given a list, returns values according to their chance of occuring
+/// Given a list, returns values according to their chance of occurring
 fn filter_by_chance(
         classes: Vec<(Either<&str, GrammaticalClass>, u8)>,
 ) -> Vec<Either<&str, GrammaticalClass>> {
@@ -109,7 +109,7 @@ fn filter_by_chance(
                 .collect();
 }
 
-/// Chance of an event occuring out of 100 times
+/// Chance of an event occurring out of 100 times
 fn should_happen(chance: u8) -> bool {
         return rand::thread_rng().gen_range(1, 100) <= chance;
 }
