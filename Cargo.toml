@@ -19,6 +19,6 @@ either = "1.5.3"
 lazy_static = "1.4.0"
 
 [dependencies.neon]
-version = "0.9.1"
+version = "0.10.1"
 default-features = false
 features = ["napi-6"]
